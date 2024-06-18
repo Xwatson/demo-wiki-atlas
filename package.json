@@ -1,0 +1,24 @@
+{
+  "name": "demo-wiki-atlas",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "webpack serve",
+    "build": "webpack"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "d3": "^7.9.0",
+    "graphology": "^0.25.4",
+    "graphology-layout": "^0.6.1",
+    "graphology-layout-forceatlas2": "^0.10.1"
+  },
+  "devDependencies": {
+    "webpack": "^5.91.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^5.0.4"
+  }
+}
