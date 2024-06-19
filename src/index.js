@@ -5,28 +5,77 @@ import random from "graphology-layout/random";
 import forceAtlas2 from "graphology-layout-forceatlas2";
 import { document_d } from "./path";
 
+const data = {
+  value: [
+    {
+      source: "66711e3f96e29b980e99534f",
+      target: "66711f8696e29b980e995380",
+      name: "页面A->页面B",
+    },
+    {
+      source: "66711f8696e29b980e995380",
+      target: "66711f9396e29b980e995395",
+      name: "页面B->页面C",
+    },
+    {
+      source: "66711f9396e29b980e995395",
+      target: "66711e3f96e29b980e99534f",
+      name: "页面C->页面A",
+    },
+  ],
+  references: {
+    pages: [
+      {
+        _id: "66711e3f96e29b980e99534f",
+        name: "页面A",
+        type: 1,
+        is_master: 1,
+      },
+      {
+        _id: "66711f8696e29b980e995380",
+        name: "页面B",
+        type: 1,
+      },
+      {
+        _id: "66711f9396e29b980e995395",
+        name: "页面C",
+        type: 1,
+      },
+    ],
+  },
+};
+
 // 创建一个无向图
 const graph = new Graph();
+data.references.pages.forEach((page) => {
+  graph.addNode(page._id, {
+    label: page.name,
+    type: page.type,
+    isMaster: page.is_master,
+  });
+});
+data.value.forEach((v) => {
+  graph.addEdge(v.source, v.target);
+});
+// graph.addNode("node1", { label: "页面 A" });
+// graph.addNode("node2", { label: "页面 B" });
+// graph.addNode("node3", { label: "页面 C" });
+// graph.addNode("node4", { label: "页面 D" });
 
-graph.addNode("node1", { label: "页面 A" });
-graph.addNode("node2", { label: "页面 B" });
-graph.addNode("node3", { label: "页面 C" });
-graph.addNode("node4", { label: "页面 D" });
+// graph.addNode("node5", { label: "引用 A" });
+// graph.addNode("node6", { label: "引用 A1" });
 
-graph.addNode("node5", { label: "引用 A" });
-graph.addNode("node6", { label: "引用 A1" });
+// graph.addNode("node7", { label: "与A互相引用" });
 
-graph.addNode("node7", { label: "与A互相引用" });
+// graph.addEdge("node1", "node2", { depth: 0 });
+// graph.addEdge("node1", "node7", { depth: 0 });
+// graph.addEdge("node2", "node3", { depth: 1 });
+// graph.addEdge("node3", "node4", { depth: 2 });
 
-graph.addEdge("node1", "node2", { depth: 0 });
-graph.addEdge("node1", "node7", { depth: 0 });
-graph.addEdge("node2", "node3", { depth: 1 });
-graph.addEdge("node3", "node4", { depth: 2 });
+// graph.addEdge("node5", "node1", { depth: 0 });
+// graph.addEdge("node6", "node5", { depth: 0 });
 
-graph.addEdge("node5", "node1", { depth: 0 });
-graph.addEdge("node6", "node5", { depth: 0 });
-
-graph.addEdge("node7", "node1", { depth: 0 });
+// graph.addEdge("node7", "node1", { depth: 0 });
 
 /* for (let i = 1; i <= 50; i++) {
   graph.addNode("node" + i, { label: "Node " + i });
@@ -154,7 +203,18 @@ nodeG
   .text((d) => {
     return graph.getNodeAttribute(d, "label");
   });
-
+function getColor(d) {
+  const source = graph.source(d);
+  const target = graph.target(d);
+  const outEdges = graph.outEdges(target);
+  const isMaster = graph.getNodeAttribute(source, "isMaster");
+  if (isMaster) {
+    return "#6698FF"; //isMaster ? "#6698FF" : "green";
+  } else if (graph.getNodeAttribute(graph.source(outEdges[0]), "isMaster")) {
+    return "green";
+  }
+  return "#ccc";
+}
 // 更新节点和边的位置
 function updatePositions() {
   link
@@ -175,12 +235,7 @@ function updatePositions() {
       return pathData;
     })
     .attr("stroke", (d) => {
-      const depth = graph.getEdgeAttribute(d, "depth");
-      if (depth === 0) {
-        const inEdges = graph.inEdges(graph.source(d)); // 入边
-        return inEdges.length > 1 ? "#6698FF" : "green";
-      }
-      return "#ccc";
+      return getColor(d);
     });
   //   link
   //     .attr("x1", (d) => positions[graph.source(d)].x)
@@ -211,17 +266,18 @@ function animate(dot, path, start, pathLength) {
 }
 
 link.each(function (d) {
-  const depth = graph.getEdgeAttribute(d, "depth");
-  if (depth === 0) {
+  const color = getColor(d);
+  if (color !== "#ccc") {
+    const source = graph.source(d);
     const node = d3.select(this).node();
-    const start = positions[graph.source(d)];
-    const inEdges = graph.inEdges(graph.source(d)); // 入边
+    const start = positions[source];
+    const inEdges = graph.inEdges(source); // 入边
     // 创建点
     const dot = d3
       .select(node.parentNode)
       .append("circle")
       .attr("r", 3)
-      .attr("fill", inEdges.length > 1 ? "#6698FF" : "green");
+      .attr("fill", color);
     // .attr("class", "dot");
     // 获取路径长度
     const pathLength = node.getTotalLength();
